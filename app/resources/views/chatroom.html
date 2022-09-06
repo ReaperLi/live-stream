@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang='en' class=''>
+
+<head>
+
+  <meta charset='UTF-8'>
+  <title>xxxxx</title>
+
+  <meta name="robots" content="noindex">
+
+
+
+
+  
+  
+<link rel="stylesheet" href="/css/chatroom.css">
+
+  <style class="INLINE_PEN_STYLESHEET_ID">
+    
+  </style>
+
+  
+</head>
+
+<body>
+<div class="video-container">
+<!-- Or if you want the latest version from the main branch -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/hls.js@canary"></script> -->
+<video id="video" height="800" width="1250" muted autoplay controls></video>
+</div>
+<div class="chat-container">
+
+	<ul class="chat">
+		<li class="message left">
+			<img class="logo" src="/img/17.jpg" alt="">
+			<p>I'm hungry!</p>
+		</li>
+		<li class="message right">
+			<img class="logo" src="/img/67.jpg" alt="">
+			<p>Hi hungry, nice to meet you. I'm Dad.</p>
+		</li>
+
+
+
+	</ul>
+	
+	<input id="send-box" type="text" class="text_input" placeholder="Message..."/>
+	
+</div>
+
+
+
+<script src="/js/hls.js"></script>
+<script>
+	var m3u8 = '/hls/.m3u8';
+	if (Hls.isSupported()) {
+		var video = document.getElementById('video');
+		var hls = new Hls();
+		hls.loadSource(m3u8);
+		hls.attachMedia(video);
+		hls.on(Hls.Events.MANIFEST_PARSED, function() {
+
+			video.play();
+		});
+	}
+// hls.js is not supported on platforms that do not have Media Source Extensions (MSE) enabled.
+// When the browser has built-in HLS support (check using `canPlayType`), we can provide an HLS manifest (i.e. .m3u8 URL) directly to the video element throught the `src` property.
+// This is using the built-in support of the plain video element, without using hls.js.
+	else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+		video.src = m3u8;
+		video.addEventListener('canplay', function() {
+			// video.play();
+		});
+	}
+
+
+
+</script>
+
+
+<script src="/js/jquery.js"></script>
+<script>
+
+    var room_id = {{ .room_id }}
+    var ws
+    function websocket(room_id){
+        var wsUrl ="ws://192.168.1.5:8082/chatroom/"+room_id;
+         ws = new WebSocket(wsUrl);
+
+        ws.onopen = function(event){
+            console.log("ws connected")
+        }
+
+        ws.onmessage = function(event){
+			res= JSON.parse(event.data)
+            if (res.data_type == 1) {
+				console.log(res.message)
+			} else {
+				addMsg(false,res.message)
+			}
+
+        }
+
+        ws.onclose = function(event){
+            console.log("closed");
+        }
+
+        ws.onerror  = function(event){
+            console.log('WebSocket error: ', event);
+        }
+
+    }
+    websocket(room_id)
+
+    $("#send-box").keydown(function(event){
+        if (event.keyCode == 13) {//回车事件
+            var text = $(this).val()
+            var url = "http://192.168.1.5:8082/room/sendMsg"
+            var data = {
+                "message":text,
+                "room_id":room_id
+            }
+            $(this).val("")
+            // $.post(url,JSON.stringify(data),function(result){
+            //    console.log(result)
+            //    // addMsg(true,text)
+            // },"json")
+            ws.send(text)
+			$(".chat-container").scrollTop($('.chat-container')[0].scrollHeight)
+
+        }
+    })
+
+	// window.addEventListener('beforeunload', function (e) {
+	// 	e.preventDefault();
+	// 	e.returnValue = '';
+	// 	ws.onclose = function(){}
+	//
+	// });
+
+    function addMsg(isMe,msg){
+        html ="";
+        if(isMe){
+            html += '<li class="message right">';
+        } else {
+            html += '<li class="message left">';
+        }
+        html += "<p>donjuan:"+msg+"</p>";
+        html += "</li>"
+        $(".chat").append(html)
+    }
+
+</script>
+</body>
+</html>
