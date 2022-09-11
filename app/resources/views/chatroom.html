@@ -4,7 +4,7 @@
 <head>
 
   <meta charset='UTF-8'>
-  <title>xxxxx</title>
+  <title>	房间号{{ .room_id }}</title>
 
   <meta name="robots" content="noindex">
 
@@ -24,6 +24,7 @@
 
 <body>
 <div class="video-container">
+	<div><span>red:{{ .username }}</span></div>
 <!-- Or if you want the latest version from the main branch -->
 <!-- <script src="https://cdn.jsdelivr.net/npm/hls.js@canary"></script> -->
 <video id="video" height="800" width="1250" muted autoplay controls></video>
@@ -31,14 +32,14 @@
 <div class="chat-container">
 
 	<ul class="chat">
-		<li class="message left">
-			<img class="logo" src="/img/17.jpg" alt="">
-			<p>I'm hungry!</p>
-		</li>
-		<li class="message right">
-			<img class="logo" src="/img/67.jpg" alt="">
-			<p>Hi hungry, nice to meet you. I'm Dad.</p>
-		</li>
+<!--		<li class="message left">-->
+<!--			<img class="logo" src="/img/17.jpg" alt="">-->
+<!--			<p>I'm hungry!</p>-->
+<!--		</li>-->
+<!--		<li class="message right">-->
+<!--			<img class="logo" src="/img/67.jpg" alt="">-->
+<!--			<p>Hi hungry, nice to meet you. I'm Dad.</p>-->
+<!--		</li>-->
 
 
 
@@ -56,8 +57,7 @@
 	if (Hls.isSupported()) {
 		var video = document.getElementById('video');
 		var hls = new Hls();
-		hls.loadSource(m3u8);
-		hls.attachMedia(video);
+
 		hls.on(Hls.Events.MANIFEST_PARSED, function() {
 
 			video.play();
@@ -69,10 +69,14 @@
 	else if (video.canPlayType('application/vnd.apple.mpegurl')) {
 		video.src = m3u8;
 		video.addEventListener('canplay', function() {
-			// video.play();
+			 video.play();
 		});
 	}
 
+function startStreaming(){
+    hls.loadSource(m3u8);
+    hls.attachMedia(video);
+}
 
 
 </script>
@@ -92,13 +96,21 @@
         }
 
         ws.onmessage = function(event){
-			res= JSON.parse(event.data)
-            if (res.data_type == 1) {
-				console.log(res.message)
-			} else {
-				addMsg(false,res.message)
-			}
-
+            res= JSON.parse(event.data)
+            switch(res.data_type)
+            {
+                case 1:
+                    console.log(res.message)
+                    break;
+                case 2:
+                    addMsg(false,res.from_user,res.message)
+                    setTimeout(scrollDwon,50)
+                    break;
+                case 3:
+                    startStreaming()
+                    break;
+                default:
+            }
         }
 
         ws.onclose = function(event){
@@ -126,10 +138,14 @@
             //    // addMsg(true,text)
             // },"json")
             ws.send(text)
-			$(".chat-container").scrollTop($('.chat-container')[0].scrollHeight)
+            setTimeout(scrollDwon,50)
+
 
         }
     })
+    function scrollDwon(){
+        $(".chat-container").scrollTop($('.chat-container')[0].scrollHeight)
+    }
 
 	// window.addEventListener('beforeunload', function (e) {
 	// 	e.preventDefault();
@@ -138,14 +154,14 @@
 	//
 	// });
 
-    function addMsg(isMe,msg){
+    function addMsg(isMe,username,msg){
         html ="";
         if(isMe){
             html += '<li class="message right">';
         } else {
             html += '<li class="message left">';
         }
-        html += "<p>donjuan:"+msg+"</p>";
+        html += "<p>"+username+":"+msg+"</p>";
         html += "</li>"
         $(".chat").append(html)
     }

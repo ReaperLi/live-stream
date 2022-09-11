@@ -2,8 +2,14 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	db "github.com/reaper/live-stream/db/sqlc"
+	"github.com/reaper/live-stream/token"
+	"github.com/reaper/live-stream/util"
 	"log"
 	"net/http"
 	"strconv"
@@ -11,14 +17,25 @@ import (
 )
 
 type Server struct {
-	Chatroom *ChatRoom
-	Router   *gin.Engine
-	Upgrader websocket.Upgrader
+	config     util.Config
+	store      db.Store
+	Chatroom   *ChatRoom
+	Router     *gin.Engine
+	tokenMaker token.Maker
+	Upgrader   websocket.Upgrader
 }
 
-func NewServer() *Server {
+func NewServer(config util.Config, store db.Store) (*Server, error) {
+	tokenMaker, err := token.NewPasetoMaker(config.TokenSymmetricKey)
+
+	if err != nil {
+		return nil, fmt.Errorf("cannot create token maker:%w", err)
+	}
 	server := &Server{
-		Chatroom: NewChatRoom(),
+		config:     config,
+		store:      store,
+		Chatroom:   NewChatRoom(),
+		tokenMaker: tokenMaker,
 		Upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
@@ -28,17 +45,45 @@ func NewServer() *Server {
 			},
 		},
 	}
+	//if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+	//	v.RegisterValidation("password_confirm", ValidPasswordConfirm)
+	//}
+
+	server.setupRouter()
+	return server, nil
+}
+
+func (server *Server) setupRouter() {
 	router := gin.Default()
+	store := cookie.NewStore([]byte("111111"))
+	store.Options(sessions.Options{
+		Path:     "/",
+		Domain:   "192.168.1.5",
+		MaxAge:   86400,
+		Secure:   false,
+		HttpOnly: false,
+		SameSite: 0,
+	})
+	//	sessions.Sessions("session001", store)
+	router.Use(sessions.Sessions("session001", store))
+	authRoutes := router.Group("/").Use(authMiddleware())
+	MustLogin := authRoutes.Use(MustLoginMiddleware())
+
 	router.Static("./css", "./resources/css")
 	router.Static("./js", "./resources/js")
 	router.Static("./img", "./resources/img")
+	router.Static("./fonts", "./resources/fonts")
 	router.LoadHTMLGlob("./resources/views/*")
-	router.GET("/room/:id", server.room)
+	authRoutes.GET("/room/:id", server.room)
 	//router.POST("/room/sendMsg", server.Chatroom.SendMsg)
-	router.GET("/chatroom/:id", server.wsHandler)
+	authRoutes.GET("/chatroom/:id", server.wsHandler)
+	router.GET("/login", server.login)
+	router.GET("/signup", server.signup)
+	router.POST("/create_account", server.createAccount)
+	authRoutes.POST("/login", server.loginUser)
+	MustLogin.GET("/user", server.user)
 
 	server.Router = router
-	return server
 }
 
 func (server *Server) Start(address string) error {
@@ -46,6 +91,7 @@ func (server *Server) Start(address string) error {
 }
 
 type WsResponse struct {
+	FromUser string `json:"from_user"`
 	DataType uint32 `json:"data_type"`
 	Message  string `json:"message"`
 	Status   uint32 `json:"status"`
@@ -85,7 +131,7 @@ func (server *Server) wsHandler(c *gin.Context) {
 	//心跳设置
 	go func() {
 		var err error
-		resp, _ := Package(1, "ping")
+		resp, _ := Package(1, "matrix", "ping")
 		for {
 			err = conn.WriteMessage(resp)
 			if err != nil {
@@ -97,35 +143,48 @@ func (server *Server) wsHandler(c *gin.Context) {
 		}
 	}()
 
-	for {
-
-		log.Println("for begins")
-		recv, err = conn.ReadMessage()
-		if err != nil {
-			goto ERR
-		}
-		log.Println(string(recv))
-		rec, _ := Package(2, string(recv))
-
-		for i, _ := range server.Chatroom.GetChat(uint32(sessionID)).GetConns() {
-			err = i.WriteMessage(rec)
+	//只允许登录用户发送消息
+	payload, _ := c.Get(authorizationPayloadKey)
+	user := payload.(*UserResponse)
+	if user == nil {
+		for {
+			recv, err = conn.ReadMessage()
 			if err != nil {
 				goto ERR
 			}
 		}
+	} else {
+		user := payload.(*UserResponse)
+		for {
+			recv, err = conn.ReadMessage()
+			if err != nil {
+				goto ERR
+			}
+			rec, _ := Package(2, user.Username, string(recv))
+			for i := range server.Chatroom.GetChat(uint32(sessionID)).GetConns() {
+				err = i.WriteMessage(rec)
+				if err != nil {
+					goto ERR
+				}
+			}
+		}
 	}
-
 	//TODO:解绑sessionID并注销连接
 ERR:
 	log.Println("-------------ERR------------------")
 	conn.Close()
 }
 
-func Package(dataType uint32, msg string) ([]byte, error) {
+func Package(dataType uint32, fromUser, msg string) ([]byte, error) {
 	var res = WsResponse{
+		FromUser: fromUser,
 		DataType: dataType, //心跳
 		Message:  msg,
 		Status:   0, //0 success
 	}
 	return json.Marshal(&res)
+}
+
+func errorResponse(err error) gin.H {
+	return gin.H{"error": err.Error()}
 }

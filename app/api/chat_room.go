@@ -61,8 +61,18 @@ func (chatRoom *ChatRoom) GetChat(roomID uint32) *ConnManager {
 //}
 
 func (server *Server) room(c *gin.Context) {
+	payload, _ := c.Get(authorizationPayloadKey)
+	user := payload.(*UserResponse)
+	var username string
+	if user != nil {
+		username = user.Username
+	} else {
+		username = "匿名用户"
+	}
+
 	c.HTML(http.StatusOK, "chatroom.html", gin.H{
-		"room_id": c.Param("id"),
+		"room_id":  c.Param("id"),
+		"username": username,
 	})
 }
 
