@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zxx">
+<head>
+<title>Login</title>
+<!-- Meta tags -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<!-- //Meta tags -->
+<link rel="stylesheet" href="/css/login.css" type="text/css" media="all" /><!-- Style-CSS -->
+<link href="/css/font-awesome.css" rel="stylesheet">
+	<link rel="stylesheet" href=""><!-- font-awesome-icons -->
+</head>
+
+<body>
+<section class="w3l-form-36">
+	<div class="form-37-mian section-gap">
+		<div class="wrapper">
+			<div class="form-inner-cont">
+				<h3>Sign up</h3>
+				<form action="create_account" method="post" class="signin-form">
+					<div class="form-input">
+						<span class="fa fa-envelope-o" aria-hidden="true"></span> <input type="text" id="username" name="username"
+							placeholder="Username" required />
+					</div>
+					<div class="form-input">
+						<span class="fa fa-key" aria-hidden="true"></span> <input type="password" id="password" name="password" placeholder="Password"
+							required />
+					</div>
+					<div class="form-input">
+						<span class="fa fa-key" aria-hidden="true"></span> <input type="password" id="password_confirm" name="password_confirm" placeholder="password_confirm"
+																				  required />
+					</div>
+					<div class="login-remember d-grid">
+						<label class="check-remaind">
+							<input type="checkbox">
+							<span class="checkmark"></span>
+							<p class="remember">Remember me</p>
+						</label>
+						<button class="btn theme-button">signup</button>
+					</div>
+					<div class="new-signup">
+						<a href="#reload" class="signuplink">Forgot password?</a>
+					</div>
+				</form>
+				<div class="social-icons">
+					<p class="continue"><span>Or</span></p>
+					<div class="social-login">
+						<a href="#facebook">
+							<div class="facebook">
+								<span class="fa fa-facebook" aria-hidden="true"></span>
+
+							</div>
+						</a>
+						<a href="#google">
+							<div class="google">
+								<span class="fa fa-google-plus" aria-hidden="true"></span>
+							</div>
+						</a>
+					</div>
+				</div>
+				<p class="signup">Already have an account? <a href="#signup.html" class="signuplink">Log in</a></p>
+			</div>
+
+			<!-- copyright -->
+			<div class="copy-right">
+<!--				<p>Copyright &copy; 2020.Company name All rights reserved.<a target="_blank" href="http://sc.chinaz.com/moban/">&#x7F51;&#x9875;&#x6A21;&#x677F;</a></p>-->
+			</div>
+			<!-- //copyright -->
+		</div>
+	</div>
+</section>
+</body>
+<script src="/js/jquery.js"></script>
+<script>
+	$("form").on("submit",function(){
+		var url = $(this).attr("action")
+		username = $("#username").val();
+		password = $("#password").val();
+		password_confirm = $("#password_confirm").val();
+		var data = {
+			"username":username,
+			"password":password,
+			"password_confirm":password_confirm
+		}
+
+		$.ajax({
+			url:url,
+			type:"post",
+			dataType:"json",
+			data:JSON.stringify(data),
+			success:function(data,textStatus,jqxhr){
+				// console.log(data);
+				// console.log(textStatus);
+				// console.log(jqxhr);
+				alert("注册成功")
+				window.location.href="/login"
+			},
+			error:function(jqxhr,textStatus,error){
+				// console.log("__失败__");
+				// console.log(error);
+				// console.log(textStatus);
+				alert(jqxhr.responseJSON.error);
+			}
+		})
+		return false
+	})
+
+
+</script>
+
+
+</html>

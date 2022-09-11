@@ -54,8 +54,6 @@ h2 {
 	align-items: flex-start;
 	list-style-type: none;
 	padding: 0;
-	margin-bottom: 500px;
-
 }
 
 .message {
@@ -67,7 +65,7 @@ h2 {
 }
 
 .message.left {
-	padding: 15px 20px 15px 70px;
+	padding: 15px 20px 15px 15px;
 }
 
 .message.right {
@@ -98,7 +96,7 @@ h2 {
 .text_input {
 	font-size: 16px;
 	position: sticky;
-	bottom: 0;
+	top: 800px;
 	left: 0;
 	right: 0;
 	padding: 10px 15px;
