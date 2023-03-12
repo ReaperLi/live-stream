@@ -11,7 +11,10 @@ import (
 type Chat struct {
 	ID        int64     `json:"id"`
 	UserID    int64     `json:"user_id"`
+	Anonym    string    `json:"anonym"`
 	Message   string    `json:"message"`
+	SessionID string    `json:"session_id"`
+	RoomID    int64     `json:"room_id"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -19,6 +22,12 @@ type Room struct {
 	ID        int64     `json:"id"`
 	UserID    int64     `json:"user_id"`
 	RoomName  string    `json:"room_name"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type Session struct {
+	ID        string    `json:"id"`
+	Members   string    `json:"members"`
 	CreatedAt time.Time `json:"created_at"`
 }
 

@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/Shopify/sarama"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
@@ -15,6 +16,8 @@ import (
 	"strconv"
 	"time"
 )
+
+var UserNo int = 0
 
 type Server struct {
 	config     util.Config
@@ -75,7 +78,6 @@ func (server *Server) setupRouter() {
 	router.Static("./fonts", "./resources/fonts")
 	router.LoadHTMLGlob("./resources/views/*")
 	authRoutes.GET("/room/:id", server.room)
-	//router.POST("/room/sendMsg", server.Chatroom.SendMsg)
 	authRoutes.GET("/chatroom/:id", server.wsHandler)
 	router.GET("/login", server.login)
 	router.GET("/signup", server.signup)
@@ -97,6 +99,8 @@ type WsResponse struct {
 	Status   uint32 `json:"status"`
 }
 
+var countWS int
+
 func (server *Server) wsHandler(c *gin.Context) {
 	var (
 		wsConn *websocket.Conn
@@ -104,6 +108,10 @@ func (server *Server) wsHandler(c *gin.Context) {
 		conn   *Connection
 		recv   []byte
 	)
+	UserNo++
+	username := "user" + strconv.Itoa(UserNo)
+	countWS++
+	log.Println("---------WS请求成功次数", countWS)
 	//upgrade connection to websocket
 	wsConn, err = server.Upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
@@ -143,32 +151,47 @@ func (server *Server) wsHandler(c *gin.Context) {
 		}
 	}()
 
+	//kafka配置
+	producer, err := sarama.NewSyncProducer([]string{"192.168.1.5:19092"}, nil)
+
 	//只允许登录用户发送消息
 	payload, _ := c.Get(authorizationPayloadKey)
 	user := payload.(*UserResponse)
 	if user == nil {
 		for {
+			//接收客户端推送来的消息
 			recv, err = conn.ReadMessage()
 			if err != nil {
 				goto ERR
 			}
-		}
-	} else {
-		user := payload.(*UserResponse)
-		for {
-			recv, err = conn.ReadMessage()
+			//-----------生产者
+			rec, _ := Package(2, username, string(recv))
+			msg := &sarama.ProducerMessage{Topic: IDSerial, Value: sarama.StringEncoder(rec)}
+			_, _, err := producer.SendMessage(msg)
+			log.Println("----------------produced message")
 			if err != nil {
 				goto ERR
 			}
-			rec, _ := Package(2, user.Username, string(recv))
-			for i := range server.Chatroom.GetChat(uint32(sessionID)).GetConns() {
-				err = i.WriteMessage(rec)
-				if err != nil {
-					goto ERR
-				}
-			}
+
 		}
 	}
+	//for {
+	//	//接收客户端推送来的消息
+	//	recv, err = conn.ReadMessage()
+	//	if err != nil {
+	//		goto ERR
+	//	}
+	//	go server.MessageSave(c, user.ID, int64(sessionID), "", string(recv))
+	//	rec, _ := Package(2, user.Username, string(recv))
+	//	//将接收到的消息推送给当前房间所有客户端
+	//	for i := range server.Chatroom.GetChat(uint32(sessionID)).GetConns() {
+	//		err = i.WriteMessage(rec)
+	//		if err != nil {
+	//			goto ERR
+	//		}
+	//	}
+	//}
+
 	//TODO:解绑sessionID并注销连接
 ERR:
 	log.Println("-------------ERR------------------")

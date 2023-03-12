@@ -7,12 +7,6 @@
   <title>	房间号{{ .room_id }}</title>
 
   <meta name="robots" content="noindex">
-
-
-
-
-  
-  
 <link rel="stylesheet" href="/css/chatroom.css">
 
   <style class="INLINE_PEN_STYLESHEET_ID">
@@ -24,7 +18,7 @@
 
 <body>
 <div class="video-container">
-	<div><span>red:{{ .username }}</span></div>
+	<div><span>{{ .username }}</span></div>
 <!-- Or if you want the latest version from the main branch -->
 <!-- <script src="https://cdn.jsdelivr.net/npm/hls.js@canary"></script> -->
 <video id="video" height="800" width="1250" muted autoplay controls></video>
@@ -57,7 +51,8 @@
 	if (Hls.isSupported()) {
 		var video = document.getElementById('video');
 		var hls = new Hls();
-
+        // hls.loadSource(m3u8);
+        // hls.attachMedia(video);
 		hls.on(Hls.Events.MANIFEST_PARSED, function() {
 
 			video.play();
@@ -88,6 +83,7 @@ function startStreaming(){
     var room_id = {{ .room_id }}
     var ws
     function websocket(room_id){
+        //var wsUrl ="ws://182.138.226.230:8082/chatroom/"+room_id;
         var wsUrl ="ws://192.168.1.5:8082/chatroom/"+room_id;
          ws = new WebSocket(wsUrl);
 

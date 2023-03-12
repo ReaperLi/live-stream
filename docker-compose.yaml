@@ -1,12 +1,187 @@
 version: "3.9"
 services:
+#  redis-cluster:
+#    image: 'redis:latest'
+#    command: 'redis-cli --cluster create redis1:6380 redis2:6381 redis3:6382 redis4:6383 redis5:6384 redis6:6385
+#    --cluster-yes'
+#    depends_on:
+#      - redis1
+#      - redis2
+#      - redis3
+#      - redis4
+#      - redis5
+#      - redis6
+#  redis1:
+#    image: 'redis:latest'
+#    container_name: redis1
+#    command: redis-server /usr/local/etc/redis/redis.conf
+#    ports:
+#      - '6380:6380'
+#      - '16380:16380'
+#    volumes:
+#      - ./redis-cluster/1/conf/redis.conf:/usr/local/etc/redis/redis.conf
+#      - ./redis-cluster/1/data:/data
+#  redis2:
+#    image: 'redis:latest'
+#    container_name: redis2
+#    command: redis-server /usr/local/etc/redis/redis.conf
+#    ports:
+#      - '6381:6381'
+#      - '16381:16381'
+#    volumes:
+#      - ./redis-cluster/2/conf/redis.conf:/usr/local/etc/redis/redis.conf
+#      - ./redis-cluster/2/data:/data
+#  redis3:
+#    image: 'redis:latest'
+#    container_name: redis3
+#    command: redis-server /usr/local/etc/redis/redis.conf
+#    ports:
+#      - '6382:6382'
+#      - '16382:16382'
+#    volumes:
+#      - ./redis-cluster/3/conf/redis.conf:/usr/local/etc/redis/redis.conf
+#      - ./redis-cluster/3/data:/data
+#  redis4:
+#    image: 'redis:latest'
+#    container_name: redis4
+#    command: redis-server /usr/local/etc/redis/redis.conf
+#    ports:
+#      - '6383:6383'
+#      - '16383:16383'
+#    volumes:
+#      - ./redis-cluster/4/conf/redis.conf:/usr/local/etc/redis/redis.conf
+#      - ./redis-cluster/4/data:/data
+#  redis5:
+#    image: 'redis:latest'
+#    container_name: redis5
+#    command: redis-server /usr/local/etc/redis/redis.conf
+#    ports:
+#      - '6384:6384'
+#      - '16384:16384'
+#    volumes:
+#      - ./redis-cluster/5/conf/redis.conf:/usr/local/etc/redis/redis.conf
+#      - ./redis-cluster/5/data:/data
+#  redis6:
+#    image: 'redis:latest'
+#    container_name: redis6
+#    command: redis-server /usr/local/etc/redis/redis.conf
+#    ports:
+#      - '6385:6385'
+#      - '16385:16385'
+#    volumes:
+#      - ./redis-cluster/6/conf/redis.conf:/usr/local/etc/redis/redis.conf
+#      - ./redis-cluster/6/data:/data
+  kafka-0:
+    image: 'bitnami/kafka:latest'
+    container_name: kafka-0
+    hostname: kafka-0
+    user: root
+    ports:
+      - '19092:9092'
+    environment:
+      # 允许使用kraft
+      - KAFKA_ENABLE_KRAFT=yes
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      # 定义kafka服务端socket监听端口 (Docker内部的ip地址和端口)
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      # 定义安全协议
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      # 定义外网访问地址 (宿主机IP地址和端口)
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://192.168.1.5:19092
+      - KAFKA_BROKER_ID=1
+      - KAFKA_KRAFT_CLUSTER_ID=LelM2dIFQkiUFvXCEcqRW8
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka-0:9093,2@kafka-1:9093,3@kafka-2:9093
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - BITNAMI_DEBUG=true
+    volumes:
+      - /home/donjuan/goproject/live-stream/kafka/config/kraft:/opt/bitnami/kafka/config/kraft
+      - /home/donjuan/dockerkafka-0:/bitnami/kafka
+  kafka-1:
+    image: 'bitnami/kafka:latest'
+    container_name: kafka-1
+    hostname: kafka-1
+    user: root
+    ports:
+      - '29092:9092'
+    environment:
+      # 允许使用kraft
+      - KAFKA_ENABLE_KRAFT=yes
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      # 定义kafka服务端socket监听端口 (Docker内部的ip地址和端口)
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      # 定义安全协议
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      # 定义外网访问地址 (宿主机IP地址和端口)
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://192.168.1.5:29092
+      - KAFKA_BROKER_ID=2
+      - KAFKA_KRAFT_CLUSTER_ID=LelM2dIFQkiUFvXCEcqRW8
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka-0:9093,2@kafka-1:9093,3@kafka-2:9093
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - BITNAMI_DEBUG=true
+    volumes:
+      - /home/donjuan/goproject/live-stream/kafka/config/kraft:/opt/bitnami/kafka/config/kraft
+      - /home/donjuan/dockerkafka-1:/bitnami/kafka
+  kafka-2:
+    image: 'bitnami/kafka:latest'
+    container_name: kafka-2
+    hostname: kafka-2
+    user: root
+    ports:
+      - '39092:9092'
+    environment:
+      # 允许使用kraft
+      - KAFKA_ENABLE_KRAFT=yes
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      # 定义kafka服务端socket监听端口 (Docker内部的ip地址和端口)
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      # 定义安全协议
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      # 定义外网访问地址 (宿主机IP地址和端口)
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://192.168.1.5:39092
+      - KAFKA_BROKER_ID=3
+      - KAFKA_KRAFT_CLUSTER_ID=LelM2dIFQkiUFvXCEcqRW8
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka-0:9093,2@kafka-1:9093,3@kafka-2:9093
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - BITNAMI_DEBUG=true
+    volumes:
+      - /home/donjuan/goproject/live-stream/kafka/config/kraft:/opt/bitnami/kafka/config/kraft
+      - /home/donjuan/dockerkafka-2:/bitnami/kafka
   rtmp:
-    build: ./rtmp
+    image: tiangolo/nginx-rtmp:latest
     ports:
       - "1935:1935"
       - "8082:8082"
-    container_name: rtmp_server
+    container_name: rtmp
     volumes:
       - ./data:/tmp/hls
       - ./rtmp/logs:/usr/local/nginx/logs
       - ./rtmp/nginx.conf:/etc/nginx/nginx.conf
+#  gateway:
+#    image: nginx:latest
+#    ports:
+#      - "8082:8082"
+#      - "9093-9095:9093-9095"
+#    volumes:
+#      - ./http/logs:/etc/nginx/logs
+#      - ./http/nginx.conf:/etc/nginx/nginx.conf
+#  postgres:
+#    image: postgres:12-alpine
+#    container_name: postgres
+#    environment:
+#      - POSTGRES_USER=root
+#      - POSTGRES_PASSWORD=secret
+#      - POSTGRES_DB=live-stream
+#    ports:
+#      - "5432:5432"
+#    volumes:
+#      - /home/donjuan/dockerpostgresql:/var/lib/postgresql/data
+#volumes:
+#  kafka_0_data:
+#    driver: local
+#  kafka_1_data:
+#    driver: local
+#  kafka_2_data:
+#    driver: local

@@ -8,7 +8,10 @@ CREATE TABLE "users" (
 CREATE TABLE "chats" (
                          "id" bigserial PRIMARY KEY,
                          "user_id" bigserial NOT NULL,
+                         "anonym" varchar NOT NULL,
                          "message" varchar NOT NULL,
+                         "session_id" varchar NOT NULL,
+                         "room_id" bigserial NOT NULL,
                          "created_at" timestamp NOT NULL DEFAULT (now())
 );
 
@@ -19,6 +22,10 @@ CREATE TABLE "rooms" (
                          "created_at" timestamp NOT NULL DEFAULT (now())
 );
 
-ALTER TABLE "chats" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
+CREATE TABLE "session" (
+                           "id" varchar PRIMARY KEY,
+                           "members" varchar NOT NULL,
+                           "created_at" timestamp NOT NULL DEFAULT (now())
+);
 
 ALTER TABLE "rooms" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");

@@ -9,6 +9,7 @@ import (
 )
 
 type Querier interface {
+	CreateChat(ctx context.Context, arg CreateChatParams) (Chat, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	GetUser(ctx context.Context, username string) (User, error)
 }
